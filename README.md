@@ -1,13 +1,13 @@
 # 🛡️ Secure Vault: Encrypted Password Manager
 
-> **A professional-grade, encrypted command-line password manager built in Java. Securely store, search, and manage your credentials with military-grade XOR encryption and master password authentication.**
+> An enterprise-grade, encrypted CLI password manager built in Java. Uses external environment variables (`VAULT_SECRET_KEY`) for cryptographic security, master password authentication, and automatic file persistence.
 
 ---
 
 ## 📖 Table of Contents
-- [Features](#-features)
-- [Technology Stack](#-technology-stack)
+- [Key Features](#-key-features)
 - [Security Architecture](#-security-architecture)
+- [Technology Stack](#-technology-stack)
 - [Project Structure](#-project-structure)
 - [Installation & Setup](#-installation--setup)
 - [User Guide](#-user-guide)
@@ -17,56 +17,79 @@
 
 ---
 
-## ✨ Features
+## ✨ Key Features
 
-- **🔑 Master Password Authentication:**  
-  First-time users create a master password; returning users must enter it to unlock the vault.
+- **🔑 Master Password Authentication**  
+  A unique master password acts as the encryption key to unlock the entire vault.
 
-- **🔐 XOR Data Encryption:**  
-  Every stored credential (Service, Username, Password) is individually encrypted using a bitwise XOR cipher before being written to disk.
+- **🔐 XOR Data Encryption**  
+  Every credential (Service, Username, Password) is individually encrypted using a bitwise XOR cipher before being written to disk.
 
-- **📂 Persistent Encrypted Storage:**  
-  The vault is saved to a local `data/vault.dat` file. If the file is stolen, the data remains completely unreadable without the master password.
+- **📂 External Environment Configuration**  
+  The encryption secret key is stored in a local `.env` file. This follows industry best practices to keep sensitive data **out of source control**.
 
-- **🔍 Advanced Search & Management:**  
-  Add, view all, search by service name, and securely delete credentials instantly.
+- **⚙️ Auto-Save Mechanism**  
+  No manual saving required. The application instantly encrypts and writes data to `data/vault.dat` the moment a credential is added or deleted.
 
-- **🛡️ Zero Plaintext Storage:**  
-  Passwords are NEVER stored in plain text on the file system, even while the application is closed.
+- **🔍 Full CRUD Operations**  
+  Add, View All, Search by service name, and securely delete credentials.
+
+- **🎲 Built-in Secure Password Generator**  
+  Generates cryptographically strong 12-character passwords (includes uppercase, lowercase, numbers, and special symbols).
+
+---
+
+## 🔐 Security Architecture
+
+Unlike beginner password managers, this application separates the encryption key from the source code.
+
+| Layer | How it Works |
+| :--- | :--- |
+| **The Key** | Stored as `VAULT_SECRET_KEY` inside a `.env` file in the project root. |
+| **The Source Code** | `CryptoService.java` reads the key from `.env` at runtime. The key is **never hardcoded** in the Java files. |
+| **The Vault** | Data is serialized to `data/vault.dat` as a text file, but the contents are completely unreadable without the key. |
+| **.gitignore** | Configured to explicitly ignore `.env` and `data/` folders, preventing accidental secret leaks to GitHub. |
 
 ---
 
 ## 💻 Technology Stack
 
-| **Category**       | **Technologies Used**                                  |
-|---------------------|--------------------------------------------------------|
-| **Language**        | Java (JDK 17+)                                         |
-| **Encryption**      | Custom XOR Bitwise Cipher (Symmetric algorithm)        |
-| **Data Structures** | `LinkedHashMap`, `ArrayList`, `List` interfaces        |
-| **I/O**             | `BufferedReader`, `BufferedWriter`, `Files`, `Paths`   |
-| **Architecture**    | Model-View-Controller (MVC) architectural pattern      |
+| **Category**       | **Technologies Used**                                      |
+|---------------------|------------------------------------------------------------|
+| **Language**        | Java (JDK 17+)                                             |
+| **Encryption**      | Custom XOR Bitwise Cipher (Symmetric Algorithm)            |
+| **Configuration**   | `.env` Environment Variables                               |
+| **Data Structures** | `LinkedHashMap`, `ArrayList`, `List`                       |
+| **I/O**             | `BufferedReader`, `BufferedWriter`, `Files`, `Paths`       |
+| **Architecture**    | Model-View-Controller (MVC) Design Pattern                 |
 
 ---
 
-## 🏗️ System Architecture
-
-The application follows a strict 3-tier MVC architecture for clean separation of concerns:
+## 🏗️ Project Structure
 
 ```text
 SecureVaultApp/
 │
-├── 📂 data/                   # DATA PERSISTENCE
-│   └── vault.dat              # Encrypted file (Auto-generated)
+├── .env                      # [IMPORTANT] Contains VAULT_SECRET_KEY
+├── .gitignore                # Ensures .env and data/ are NOT uploaded to GitHub
+├── LICENSE
+├── README.md
 │
-├── 📂 src/
-│   ├── 📂 models/             # DATA LAYER
-│   │   ├── Credential.java    # POJO representing one service entry
-│   │   └── Vault.java         # Manages in-memory HashMap of credentials
-│   │
-│   ├── 📂 services/           # BUSINESS LOGIC LAYER
-│   │   ├── CryptoService.java # XOR Encryption/Decryption algorithms
-│   │   ├── VaultService.java  # Handles File I/O and encrypts/decrypts before saving
-│   │   └── AuthService.java   # Handles Master Password verification
-│   │
-│   └── 📂 ui/                 # PRESENTATION LAYER
-│       └── Main.java          # Entry point, menu loop, user input handling
+├── data/
+│   └── vault.dat             # Encrypted data (Auto-generated on first run)
+│
+└── src/
+    └── com.securevault/
+        ├── Main.java         # Entry Point & UI Loop
+        │
+        ├── models/           # Data Entities
+        │   ├── Credential.java
+        │   └── Vault.java
+        │
+        ├── services/         # Business Logic
+        │   ├── CryptoService.java    # Reads .env to encrypt/decrypt
+        │   ├── AuthService.java      # Handles master password login
+        │   └── VaultService.java     # Handles file I/O & auto-saving
+        │
+        └── utils/            # Helper Tools
+            └── PasswordGenerator.java
